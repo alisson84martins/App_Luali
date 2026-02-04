@@ -1,3 +1,17 @@
+/**
+ * ProductDetailScreen.tsx
+ * 
+ * Tela de visualização detalhada de um produto
+ * 
+ * Funcionalidades:
+ * - Exibe todas as informações do produto
+ * - Mostra código de barras visual (EAN-13)
+ * - Calcula e exibe margem de lucro
+ * - Exibe tamanhos e cores disponíveis
+ * - Botões para editar ou excluir produto
+ * - Proteção contra divisão por zero
+ */
+
 import React from 'react';
 import {
   View,
@@ -13,18 +27,27 @@ import { Product } from '../types/Product';
 import { formatPrice } from '../utils/helpers';
 import { StorageService } from '../services/StorageService';
 
+// Props do componente
 interface ProductDetailScreenProps {
   navigation: any;
   route: any;
 }
 
 export default function ProductDetailScreen({ navigation, route }: ProductDetailScreenProps) {
+  // Recupera o produto dos parâmetros de navegação
   const product: Product = route.params.product;
 
+  /**
+   * Navega para tela de edição passando o produto
+   */
   const handleEdit = () => {
     navigation.navigate('AddEditProduct', { product });
   };
 
+  /**
+   * Exibe diálogo de confirmação e exclui produto
+   * Volta para lista após exclusão
+   */
   const handleDelete = () => {
     Alert.alert(
       'Confirmar Exclusão',
@@ -49,14 +72,29 @@ export default function ProductDetailScreen({ navigation, route }: ProductDetail
     );
   };
 
+  // Calcula margem de lucro (valor e percentual)
   const profitMargin = product.salePrice - product.purchasePrice;
+  // Proteção contra divisão por zero
   const profitPercentage = product.purchasePrice > 0 
     ? ((profitMargin / product.purchasePrice) * 100).toFixed(1)
     : '0.0';
 
+  /**
+   * Renderização da tela
+   * Estrutura:
+   * 1. Header com nome e descrição
+   * 2. Código de barras visual
+   * 3. Informações de identificação (SKU)
+   * 4. Preços e margem de lucro
+   * 5. Tamanhos e cores
+   * 6. Estoque
+   * 7. Informações do sistema
+   * 8. Botões de ação
+   */
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView}>
+        {/* Header com nome do produto */}
         <View style={styles.header}>
           <Text style={styles.productName}>{product.name}</Text>
           {product.description && (

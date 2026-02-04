@@ -1,3 +1,19 @@
+/**
+ * AddEditProductScreen.tsx
+ * 
+ * Tela de formulário para adicionar ou editar produtos
+ * 
+ * Funcionalidades:
+ * - Formulário completo de cadastro de produto
+ * - Geração automática de SKU baseada no nome
+ * - Geração automática de código de barras EAN-13
+ * - Validação de campos obrigatórios
+ * - Modo criação ou edição (detectado automaticamente)
+ * - SKU e barcode não editáveis após criação
+ * - Suporte a tamanhos e cores múltiplos (separados por vírgula)
+ * - KeyboardAvoidingView para iOS
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -16,34 +32,45 @@ import { StorageService } from '../services/StorageService';
 import { generateSKU, generateBarcode, parsePrice } from '../utils/helpers';
 import { v4 as uuidv4 } from 'uuid';
 
+// Props do componente
 interface AddEditProductScreenProps {
   navigation: any;
   route: any;
 }
 
 export default function AddEditProductScreen({ navigation, route }: AddEditProductScreenProps) {
+  // Determina se está editando ou criando
   const existingProduct: Product | null = route.params?.product || null;
   const isEdit = existingProduct !== null;
 
+  // Estado do formulário (todos os campos são strings para facilitar input)
   const [formData, setFormData] = useState<ProductFormData>({
     name: existingProduct?.name || '',
     purchasePrice: existingProduct?.purchasePrice.toString() || '',
     salePrice: existingProduct?.salePrice.toString() || '',
-    sizes: existingProduct?.sizes.join(', ') || '',
-    colors: existingProduct?.colors.join(', ') || '',
+    sizes: existingProduct?.sizes.join(', ') || '', // Junta array em string
+    colors: existingProduct?.colors.join(', ') || '', // Junta array em string
     description: existingProduct?.description || '',
     quantity: existingProduct?.quantity.toString() || '0',
   });
 
+  // Estados separados para SKU e barcode
   const [sku, setSku] = useState(existingProduct?.sku || '');
   const [barcode, setBarcode] = useState(existingProduct?.barcode || '');
 
+  /**
+   * Atualiza o título da tela baseado no modo (editar/criar)
+   */
   useEffect(() => {
     navigation.setOptions({
       title: isEdit ? 'Editar Produto' : 'Novo Produto',
     });
   }, [isEdit]);
 
+  /**
+   * Gera SKU automaticamente baseado no nome do produto
+   * Só funciona se o nome estiver preenchido
+   */
   const handleGenerateSKU = () => {
     if (!formData.name.trim()) {
       Alert.alert('Atenção', 'Digite o nome do produto primeiro');
@@ -53,11 +80,18 @@ export default function AddEditProductScreen({ navigation, route }: AddEditProdu
     setSku(newSku);
   };
 
+  /**
+   * Gera código de barras EAN-13 aleatório
+   */
   const handleGenerateBarcode = () => {
     const newBarcode = generateBarcode();
     setBarcode(newBarcode);
   };
 
+  /**
+   * Valida todos os campos obrigatórios do formulário
+   * @returns true se válido, false caso contrário
+   */
   const validateForm = (): boolean => {
     if (!formData.name.trim()) {
       Alert.alert('Erro', 'O nome do produto é obrigatório');
@@ -82,23 +116,30 @@ export default function AddEditProductScreen({ navigation, route }: AddEditProdu
     return true;
   };
 
+  /**
+   * Salva o produto (cria novo ou atualiza existente)
+   * Valida formulário, converte dados e persiste no armazenamento
+   */
   const handleSave = async () => {
     if (!validateForm()) {
       return;
     }
 
     try {
+      // Monta objeto Product convertendo strings para tipos corretos
       const productData: Product = {
-        id: existingProduct?.id || uuidv4(),
+        id: existingProduct?.id || uuidv4(), // Mantém ID ou cria novo
         name: formData.name.trim(),
         sku: sku.trim(),
         barcode: barcode.trim(),
         purchasePrice: parseFloat(formData.purchasePrice),
         salePrice: parseFloat(formData.salePrice),
+        // Converte string "P, M, G" em array ["P", "M", "G"]
         sizes: formData.sizes
           .split(',')
           .map(s => s.trim())
           .filter(s => s.length > 0),
+        // Converte string "Preto, Branco" em array ["Preto", "Branco"]
         colors: formData.colors
           .split(',')
           .map(c => c.trim())
@@ -109,6 +150,7 @@ export default function AddEditProductScreen({ navigation, route }: AddEditProdu
         updatedAt: new Date().toISOString(),
       };
 
+      // Salva conforme modo (editar ou criar)
       if (isEdit) {
         await StorageService.updateProduct(productData);
         Alert.alert('Sucesso', 'Produto atualizado com sucesso', [
@@ -126,12 +168,18 @@ export default function AddEditProductScreen({ navigation, route }: AddEditProdu
     }
   };
 
+  /**
+   * Renderização da tela
+   * KeyboardAvoidingView ajusta o layout quando o teclado aparece
+   * ScrollView permite scroll quando há muitos campos
+   */
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {/* Seção: Informações Básicas */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Informações Básicas</Text>
           

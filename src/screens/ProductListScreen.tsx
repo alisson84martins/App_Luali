@@ -1,3 +1,18 @@
+/**
+ * ProductListScreen.tsx
+ * 
+ * Tela principal do aplicativo que exibe a lista de produtos cadastrados
+ * 
+ * Funcionalidades:
+ * - Exibe lista de produtos em cards
+ * - Busca por nome, SKU ou código de barras
+ * - Pull-to-refresh para recarregar dados
+ * - Navegação para detalhes do produto
+ * - Botões de edição e exclusão rápida
+ * - Botão FAB (+) para adicionar novo produto
+ * - Mensagem quando não há produtos
+ */
+
 import React, { useState, useCallback } from 'react';
 import {
   View,
@@ -15,15 +30,21 @@ import { Product } from '../types/Product';
 import { StorageService } from '../services/StorageService';
 import { formatPrice } from '../utils/helpers';
 
+// Props do componente
 interface ProductListScreenProps {
   navigation: any;
 }
 
 export default function ProductListScreen({ navigation }: ProductListScreenProps) {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
+  // Estados do componente
+  const [products, setProducts] = useState<Product[]>([]); // Lista de produtos
+  const [searchQuery, setSearchQuery] = useState(''); // Texto da busca
+  const [refreshing, setRefreshing] = useState(false); // Estado do pull-to-refresh
 
+  /**
+   * Carrega produtos do armazenamento local
+   * Chamado ao entrar na tela e ao fazer refresh
+   */
   const loadProducts = async () => {
     try {
       const loadedProducts = await StorageService.getProducts();
@@ -33,18 +54,30 @@ export default function ProductListScreen({ navigation }: ProductListScreenProps
     }
   };
 
+  /**
+   * Hook que executa ao focar na tela
+   * Garante que a lista seja atualizada quando voltar de outras telas
+   */
   useFocusEffect(
     useCallback(() => {
       loadProducts();
     }, [])
   );
 
+  /**
+   * Handler do pull-to-refresh
+   * Permite ao usuário arrastar a tela para baixo e recarregar dados
+   */
   const onRefresh = async () => {
     setRefreshing(true);
     await loadProducts();
     setRefreshing(false);
   };
 
+  /**
+   * Exibe diálogo de confirmação e exclui produto
+   * @param product - Produto a ser excluído
+   */
   const handleDeleteProduct = (product: Product) => {
     Alert.alert(
       'Confirmar Exclusão',
@@ -57,7 +90,7 @@ export default function ProductListScreen({ navigation }: ProductListScreenProps
           onPress: async () => {
             try {
               await StorageService.deleteProduct(product.id);
-              await loadProducts();
+              await loadProducts(); // Recarrega lista
               Alert.alert('Sucesso', 'Produto excluído com sucesso');
             } catch (error) {
               Alert.alert('Erro', 'Não foi possível excluir o produto');
@@ -68,12 +101,20 @@ export default function ProductListScreen({ navigation }: ProductListScreenProps
     );
   };
 
+  /**
+   * Filtra produtos baseado na busca
+   * Busca por: nome, SKU ou código de barras
+   */
   const filteredProducts = products.filter(product =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     product.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
     product.barcode.includes(searchQuery)
   );
 
+  /**
+   * Renderiza cada card de produto na lista
+   * @param item - Produto a ser renderizado
+   */
   const renderProduct = ({ item }: { item: Product }) => (
     <TouchableOpacity
       style={styles.productCard}
@@ -110,24 +151,36 @@ export default function ProductListScreen({ navigation }: ProductListScreenProps
           style={styles.actionButton}
           onPress={() => navigation.navigate('AddEditProduct', { product: item })}
         >
+          {/* Botão de editar produto */}
           <Ionicons name="create-outline" size={24} color="#007AFF" />
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.actionButton}
           onPress={() => handleDeleteProduct(item)}
         >
+          {/* Botão de excluir produto */}
           <Ionicons name="trash-outline" size={24} color="#FF3B30" />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
 
+  /**
+   * Renderização da tela
+   * Estrutura:
+   * 1. Header customizado com título
+   * 2. Barra de busca
+   * 3. Lista de produtos (FlatList)
+   * 4. Botão FAB para adicionar produto
+   */
   return (
     <View style={styles.container}>
+      {/* Header customizado */}
       <View style={styles.header}>
         <Text style={styles.title}>Estoque Luali</Text>
       </View>
       
+      {/* Barra de busca */}
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
         <TextInput
@@ -138,6 +191,7 @@ export default function ProductListScreen({ navigation }: ProductListScreenProps
         />
       </View>
 
+      {/* Lista de produtos com pull-to-refresh */}
       <FlatList
         data={filteredProducts}
         renderItem={renderProduct}
@@ -147,6 +201,7 @@ export default function ProductListScreen({ navigation }: ProductListScreenProps
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         ListEmptyComponent={
+          // Componente exibido quando não há produtos
           <View style={styles.emptyContainer}>
             <Ionicons name="cube-outline" size={64} color="#ccc" />
             <Text style={styles.emptyText}>
@@ -163,6 +218,7 @@ export default function ProductListScreen({ navigation }: ProductListScreenProps
         }
       />
 
+      {/* Botão FAB (Floating Action Button) para adicionar produto */}
       <TouchableOpacity
         style={styles.fab}
         onPress={() => navigation.navigate('AddEditProduct', { product: null })}
@@ -173,6 +229,10 @@ export default function ProductListScreen({ navigation }: ProductListScreenProps
   );
 }
 
+/**
+ * Estilos do componente
+ * Organizado por seções para facilitar manutenção
+ */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
