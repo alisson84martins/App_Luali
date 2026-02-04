@@ -68,7 +68,28 @@ export const formatPrice = (price: number): string => {
 
 /**
  * Parses a price string to number
+ * Handles Brazilian format (1.234,56) and simple format (1234.56)
  */
 export const parsePrice = (priceStr: string): number => {
-  return parseFloat(priceStr.replace(/[^\d.,]/g, '').replace(',', '.')) || 0;
+  // Remove all non-digit, non-comma, non-dot characters
+  const cleaned = priceStr.replace(/[^\d.,]/g, '');
+  
+  // If there's both comma and dot, determine which is decimal separator
+  if (cleaned.includes(',') && cleaned.includes('.')) {
+    // If comma comes after dot, assume European format (1.234,56)
+    if (cleaned.lastIndexOf(',') > cleaned.lastIndexOf('.')) {
+      return parseFloat(cleaned.replace(/\./g, '').replace(',', '.')) || 0;
+    } else {
+      // Assume US format (1,234.56)
+      return parseFloat(cleaned.replace(/,/g, '')) || 0;
+    }
+  }
+  
+  // If only comma, assume it's decimal separator (Brazilian format)
+  if (cleaned.includes(',')) {
+    return parseFloat(cleaned.replace(',', '.')) || 0;
+  }
+  
+  // Otherwise, parse as-is
+  return parseFloat(cleaned) || 0;
 };

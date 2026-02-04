@@ -182,11 +182,14 @@ export default function AddEditProductScreen({ navigation, route }: AddEditProdu
               value={barcode}
               onChangeText={setBarcode}
               keyboardType="numeric"
+              editable={!isEdit}
             />
-            <TouchableOpacity style={styles.generateButton} onPress={handleGenerateBarcode}>
-              <Ionicons name="barcode-outline" size={20} color="#fff" />
-              <Text style={styles.generateButtonText}>Gerar</Text>
-            </TouchableOpacity>
+            {!isEdit && (
+              <TouchableOpacity style={styles.generateButton} onPress={handleGenerateBarcode}>
+                <Ionicons name="barcode-outline" size={20} color="#fff" />
+                <Text style={styles.generateButtonText}>Gerar</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 

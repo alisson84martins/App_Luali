@@ -50,7 +50,9 @@ export default function ProductDetailScreen({ navigation, route }: ProductDetail
   };
 
   const profitMargin = product.salePrice - product.purchasePrice;
-  const profitPercentage = ((profitMargin / product.purchasePrice) * 100).toFixed(1);
+  const profitPercentage = product.purchasePrice > 0 
+    ? ((profitMargin / product.purchasePrice) * 100).toFixed(1)
+    : '0.0';
 
   return (
     <View style={styles.container}>
